@@ -12,7 +12,7 @@ import os
 import copy
 
 
-def _load_latest_policy_and_logs(agent, *, policy_dir, logs_dir):
+def _load_latest_policy_and_logs(agent, policy_dir, logs_dir):
     """Loads the latest policy.
     Returns the next step number to begin with.
     """
@@ -21,12 +21,14 @@ def _load_latest_policy_and_logs(agent, *, policy_dir, logs_dir):
 
     log_csv_path = os.path.join(logs_dir, 'log.csv')
     if not os.path.exists(log_csv_path):
+        agent.global_status['best_perf'] = -1e8
         return 0   # fresh start
 
     print("Reading: {}".format(log_csv_path))
     agent.logger.read_log(log_csv_path)
     last_step = agent.logger.max_len - 1
     if last_step <= 0:
+        agent.global_status['best_perf'] = -1e8
         return 0   # fresh start
 
     # find latest policy/baseline
@@ -76,8 +78,6 @@ def train_agent(job_name, agent,
     if os.path.isdir('iterations') == False: os.mkdir('iterations')
     if os.path.isdir('logs') == False and agent.save_logs == True: os.mkdir('logs')
     best_policy = copy.deepcopy(agent.policy)
-    best_perf = -1e8
-    train_curve = best_perf*np.ones(niter)
     mean_pol_perf = 0.0
     e = GymEnv(agent.env.env_id)
 
@@ -86,6 +86,19 @@ def train_agent(job_name, agent,
     i_start = _load_latest_policy_and_logs(agent,
                                            policy_dir='iterations',
                                            logs_dir='logs')
+    train_curve = agent.global_status['best_perf'] * np.ones(niter)
+
+    def save_progress():
+        if agent.save_logs:
+            agent.logger.save_log('logs/')
+            make_train_plots(log=agent.logger.log, keys=plot_keys, save_loc='logs/')
+        policy_file = 'policy_%i.pickle' % i
+        baseline_file = 'baseline_%i.pickle' % i
+        pickle.dump(agent.policy, open('iterations/' + policy_file, 'wb'))
+        pickle.dump(agent.baseline, open('iterations/' + baseline_file, 'wb'))
+        pickle.dump(best_policy, open('iterations/best_policy.pickle', 'wb'))
+        pickle.dump(agent.global_status, open('iterations/global_status.pickle', 'wb'))
+
     if i_start:
         print("Resuming from an existing job folder ...")
 
@@ -94,9 +107,9 @@ def train_agent(job_name, agent,
         print("......................................................................................")
         print("ITERATION : %i " % i)
 
-        if train_curve[i-1] > best_perf:
+        if train_curve[i-1] > agent.global_status['best_perf']:
             best_policy = copy.deepcopy(agent.policy)
-            best_perf = train_curve[i-1]
+            agent.global_status['best_perf'] = train_curve[i-1]
 
         N = num_traj if sample_mode == 'trajectories' else num_samples
         args = dict(N=N, sample_mode=sample_mode, gamma=gamma, gae_lambda=gae_lambda, num_cpu=num_cpu)
@@ -112,15 +125,7 @@ def train_agent(job_name, agent,
                 agent.logger.log_kv('eval_score', mean_pol_perf)
 
         if i % save_freq == 0 and i > 0:
-            if agent.save_logs:
-                agent.logger.save_log('logs/')
-                make_train_plots(log=agent.logger.log, keys=plot_keys, save_loc='logs/')
-            policy_file = 'policy_%i.pickle' % i
-            baseline_file = 'baseline_%i.pickle' % i
-            pickle.dump(agent.policy, open('iterations/' + policy_file, 'wb'))
-            pickle.dump(agent.baseline, open('iterations/' + baseline_file, 'wb'))
-            pickle.dump(best_policy, open('iterations/best_policy.pickle', 'wb'))
-            pickle.dump(agent.global_status, open('iterations/global_status.pickle', 'wb'))
+            save_progress()
 
         # print results to console
         if i == 0:
@@ -129,9 +134,9 @@ def train_agent(job_name, agent,
             result_file.write("Iter | Sampling Pol | Evaluation Pol | Best (Sampled) \n")
             result_file.close()
         print("[ %s ] %4i %5.2f %5.2f %5.2f " % (timer.asctime(timer.localtime(timer.time())),
-                                                 i, train_curve[i], mean_pol_perf, best_perf))
+                                                 i, train_curve[i], mean_pol_perf, agent.global_status['best_perf']))
         result_file = open('results.txt', 'a')
-        result_file.write("%4i %5.2f %5.2f %5.2f \n" % (i, train_curve[i], mean_pol_perf, best_perf))
+        result_file.write("%4i %5.2f %5.2f %5.2f \n" % (i, train_curve[i], mean_pol_perf, agent.global_status['best_perf']))
         result_file.close()
         if agent.save_logs:
             print_data = sorted(filter(lambda v: np.asarray(v[1]).size == 1,
@@ -140,7 +145,6 @@ def train_agent(job_name, agent,
 
     # final save
     pickle.dump(best_policy, open('iterations/best_policy.pickle', 'wb'))
-    if agent.save_logs:
-        agent.logger.save_log('logs/')
-        make_train_plots(log=agent.logger.log, keys=plot_keys, save_loc='logs/')
+    save_progress()
+
     os.chdir(previous_dir)

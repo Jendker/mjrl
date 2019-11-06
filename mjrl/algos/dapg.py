@@ -48,6 +48,7 @@ class DAPG(NPG):
         self.lam_0 = lam_0
         self.lam_1 = lam_1
         self.iter_count = 0.0
+        self.global_status = dict()
         if save_logs: self.logger = DataLog()
 
     def train_from_paths(self, paths):
@@ -138,3 +139,6 @@ class DAPG(NPG):
                 except:
                     pass
         return base_stats
+
+    def load_global_status(self, status_dict):
+        self.global_status = status_dict
