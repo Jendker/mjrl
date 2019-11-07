@@ -27,27 +27,17 @@ def _load_latest_policy_and_logs(agent, policy_dir, logs_dir):
     print("Reading: {}".format(log_csv_path))
     agent.logger.read_log(log_csv_path)
     last_step = agent.logger.max_len - 1
-    if last_step <= 0:
-        agent.global_status['best_perf'] = -1e8
-        return 0   # fresh start
 
     # find latest policy/baseline
     i = last_step
     while i >= 0:
-        policy_path = os.path.join(policy_dir, 'policy_{}.pickle'.format(i))
-        baseline_path = os.path.join(policy_dir, 'baseline_{}.pickle'.format(i))
-        if not os.path.isfile(policy_path):
+        checkpoint_path = os.path.join(policy_dir, 'checkpoint_{}.pickle'.format(i))
+        if not os.path.isfile(checkpoint_path):
+            i -= 1
             continue
 
-        with open(policy_path, 'rb') as fp:
-            agent.policy = pickle.load(fp)
-        with open(baseline_path, 'rb') as fp:
-            agent.baseline = pickle.load(fp)
-
-        # additional
-        global_status_path = os.path.join(policy_dir, 'global_status.pickle')
-        with open(global_status_path, 'rb') as fp:
-            agent.load_global_status( pickle.load(fp) )
+        with open(checkpoint_path, 'rb') as fp:
+            agent.load_checkpoint(pickle.load(fp))
 
         agent.logger.shrink_to(i + 1)
         assert agent.logger.max_len == i + 1
@@ -92,12 +82,9 @@ def train_agent(job_name, agent,
         if agent.save_logs:
             agent.logger.save_log('logs/')
             make_train_plots(log=agent.logger.log, keys=plot_keys, save_loc='logs/')
-        policy_file = 'policy_%i.pickle' % i
-        baseline_file = 'baseline_%i.pickle' % i
-        pickle.dump(agent.policy, open('iterations/' + policy_file, 'wb'))
-        pickle.dump(agent.baseline, open('iterations/' + baseline_file, 'wb'))
+        checkpoint_file = 'checkpoint_%i.pickle' % i
+        pickle.dump(agent.checkpoint, open('iterations/' + checkpoint_file, 'wb'))
         pickle.dump(best_policy, open('iterations/best_policy.pickle', 'wb'))
-        pickle.dump(agent.global_status, open('iterations/global_status.pickle', 'wb'))
 
     if i_start:
         print("Resuming from an existing job folder ...")
@@ -144,7 +131,6 @@ def train_agent(job_name, agent,
             print(tabulate(print_data))
 
     # final save
-    pickle.dump(best_policy, open('iterations/best_policy.pickle', 'wb'))
     save_progress()
 
     os.chdir(previous_dir)

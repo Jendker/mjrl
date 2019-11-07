@@ -162,5 +162,9 @@ class NPG(BatchREINFORCE):
 
         return base_stats
 
-    def load_global_status(self, status_dict):
-        self.global_status = status_dict
+    @property
+    def checkpoint(self):
+        return [self.policy, self.baseline, self.global_status]
+
+    def load_checkpoint(self, checkpoint):
+        self.policy, self.baseline, self.global_status = checkpoint
