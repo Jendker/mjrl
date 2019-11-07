@@ -88,6 +88,17 @@ class MLP:
 
     # Main functions
     # ============================================
+    def get_actions(self, observations):
+        means = []
+        log_std_vals = []
+        for i in range(observations.shape[0]):
+            output = self.get_action(observations[i, :])[1]
+            means.append(output['evaluation'])
+            log_std_vals.append(output['log_std'])
+        means = np.array(means)
+        log_std_vals = np.multiply(np.ones((observations.shape[0], self.log_std_val.size)), self.log_std_val)
+        return means, {'mean': means, 'log_std': log_std_vals, 'evaluation': means}
+
     def get_action(self, observation):
         o = np.float32(observation.reshape(1, -1))
         self.obs_var.data = torch.from_numpy(o)
