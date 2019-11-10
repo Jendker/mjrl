@@ -144,5 +144,5 @@ class DAPG(NPG):
     def checkpoint(self):
         return [self.policy, self.baseline, self.global_status]
 
-    def load_checkpoint(self, checkpoint):
+    def load_checkpoint(self, checkpoint, **kwargs):
         self.policy, self.baseline, self.global_status = checkpoint

@@ -37,7 +37,7 @@ def _load_latest_policy_and_logs(agent, policy_dir, logs_dir):
             continue
 
         with open(checkpoint_path, 'rb') as fp:
-            agent.load_checkpoint(pickle.load(fp))
+            agent.load_checkpoint(pickle.load(fp), path=policy_dir, iteration=i)
 
         agent.logger.shrink_to(i + 1)
         assert agent.logger.max_len == i + 1
@@ -84,6 +84,10 @@ def train_agent(job_name, agent,
             make_train_plots(log=agent.logger.log, keys=plot_keys, save_loc='logs/')
         checkpoint_file = 'checkpoint_%i.pickle' % i
         pickle.dump(agent.checkpoint, open('iterations/' + checkpoint_file, 'wb'))
+        # check if agent has custom save_checkpoint function defined, if so use it
+        save_checkpoint_funct = getattr(agent, "save_checkpoint", None)
+        if save_checkpoint_funct:
+            save_checkpoint_funct(path='iterations/', iteration=i)
         pickle.dump(best_policy, open('iterations/best_policy.pickle', 'wb'))
 
     if i_start:
@@ -131,6 +135,9 @@ def train_agent(job_name, agent,
             print(tabulate(print_data))
 
     # final save
-    save_progress()
+    if i_start != niter:
+        save_progress()
+    else:
+        print("Requested iteration number equal to the found checkpoint iteration count. All done, exiting.")
 
     os.chdir(previous_dir)
