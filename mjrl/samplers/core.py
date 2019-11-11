@@ -32,7 +32,10 @@ def do_rollout(
 
     # get the correct env behavior
     if type(env) == str:
-        env = GymEnv(env)
+        if isinstance(env_kwargs, dict):
+            env = GymEnv(env, **env_kwargs)
+        else:
+            env = GymEnv(env)
     elif isinstance(env, GymEnv):
         env = env
     elif callable(env):

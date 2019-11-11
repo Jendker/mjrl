@@ -58,6 +58,7 @@ def train_agent(job_name, agent,
                 save_freq = 10,
                 evaluation_rollouts = None,
                 plot_keys = ['stoc_pol_mean'],
+                env_kwargs = None
                 ):
 
     np.random.seed(seed)
@@ -69,7 +70,10 @@ def train_agent(job_name, agent,
     if os.path.isdir('logs') == False and agent.save_logs == True: os.mkdir('logs')
     best_policy = copy.deepcopy(agent.policy)
     mean_pol_perf = 0.0
-    e = GymEnv(agent.env.env_id)
+    if isinstance(env_kwargs, dict):
+        e = GymEnv(agent.env.env_id, **env_kwargs)
+    else:
+        e = GymEnv(agent.env.env_id)
 
     # Load from any existing checkpoint, policy, statistics, etc.
     # Why no checkpointing.. :(
@@ -103,7 +107,8 @@ def train_agent(job_name, agent,
             agent.global_status['best_perf'] = train_curve[i-1]
 
         N = num_traj if sample_mode == 'trajectories' else num_samples
-        args = dict(N=N, sample_mode=sample_mode, gamma=gamma, gae_lambda=gae_lambda, num_cpu=num_cpu)
+        args = dict(N=N, sample_mode=sample_mode, gamma=gamma, gae_lambda=gae_lambda, num_cpu=num_cpu,
+                    env_kwargs=env_kwargs)
         stats = agent.train_step(**args)
         train_curve[i] = stats[0]
 
