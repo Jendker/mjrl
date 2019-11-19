@@ -44,6 +44,21 @@ def _load_latest_policy_and_logs(agent, policy_dir, logs_dir):
     # cannot find any saved policy
     raise RuntimeError("Log file exists, but cannot find any saved policy.")
 
+
+def calculate_policy_update_count(i, irl_kwargs):
+    if irl_kwargs is None:
+        return 1
+    if 'policy_updates' in irl_kwargs:
+        return irl_kwargs['policy_updates']
+    policy_updates = irl_kwargs['policy']['min_updates'] + irl_kwargs['policy']['max_updates'] * \
+                     (i / irl_kwargs['policy']['steps_till_max'])
+    if policy_updates > irl_kwargs['policy']['max_updates']:
+        policy_updates = irl_kwargs['policy']['max_updates']
+    if policy_updates < 1:
+        policy_updates = 1
+    return int(policy_updates)
+
+
 def train_agent(job_name, agent,
                 seed = 0,
                 niter = 101,
@@ -107,12 +122,10 @@ def train_agent(job_name, agent,
         args = dict(N=N, sample_mode=sample_mode, gamma=gamma, gae_lambda=gae_lambda, num_cpu=num_cpu,
                     env_kwargs=env_kwargs)
         # calculate no. ob policy updates
+        policy_updates_no = calculate_policy_update_count(i, irl_kwargs)
         if irl_kwargs is not None:
-            policy_updates_no = irl_kwargs['policy_updates']
             args['return_paths'] = True
             sampler_paths = []
-        else:
-            policy_updates_no = 1
         # do policy update
         for j in range(policy_updates_no):
             output = agent.train_step(**args)
