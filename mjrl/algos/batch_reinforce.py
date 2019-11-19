@@ -89,8 +89,11 @@ class BatchREINFORCE:
             self.logger.log_kv('time_sampling', timer.time() - ts)
 
         self.seed = self.seed + N if self.seed is not None else self.seed
+
         if return_paths:
             original_paths = copy.deepcopy(paths)
+        if "eval_irl" in dir(self):
+            paths = self.eval_irl(paths)
         # compute returns
         process_samples.compute_returns(paths, gamma)
         # compute advantages
