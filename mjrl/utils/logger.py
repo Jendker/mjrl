@@ -24,6 +24,11 @@ class DataLog:
         if len(self.log[key]) > self.max_len:
             self.max_len = self.max_len + 1
 
+    def align_rows(self):
+        for key in self.log.keys():
+            while self.max_len > len(self.log[key]):
+                self.log[key].append(self.log[key][-1])
+
     def save_log(self, save_path):
         # TODO: Validate all lengths are the same.
         pickle.dump(self.log, open(save_path + '/log.pickle', 'wb'))
@@ -34,11 +39,13 @@ class DataLog:
 
             writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
             writer.writeheader()
-            for row in range(self.max_len):
-                row_dict = {'iteration': row}
+            for i in range(self.max_len):
+                row_dict = {}
                 for key in self.log.keys():
-                    if row < len(self.log[key]):
-                        row_dict[key] = self.log[key][row]
+                    if i < len(self.log[key]):
+                        row_dict[key] = self.log[key][i]
+                if 'iteration' not in row_dict:
+                    row_dict['iteration'] = i
                 writer.writerow(row_dict)
 
     def get_current_log(self):
@@ -71,9 +78,6 @@ class DataLog:
                         data[key].append(eval(row_dict[key]))
                     except:
                         print("ERROR on reading key {}: {}".format(key, row_dict[key]))
-
-                if 'iteration' in data and data['iteration'][-1] != row:
-                    raise RuntimeError("Iteration %d mismatch -- possibly corrupted logfile?" % row)
 
         self.log = data
         self.max_len = max(len(v) for k, v in self.log.items())

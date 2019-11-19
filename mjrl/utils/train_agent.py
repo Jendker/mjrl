@@ -39,9 +39,7 @@ def _load_latest_policy_and_logs(agent, policy_dir, logs_dir):
         with open(checkpoint_path, 'rb') as fp:
             agent.load_checkpoint(pickle.load(fp), path=policy_dir, iteration=i)
 
-        agent.logger.shrink_to(i + 1)
-        assert agent.logger.max_len == i + 1
-        return agent.logger.max_len
+        return i+1
 
     # cannot find any saved policy
     raise RuntimeError("Log file exists, but cannot find any saved policy.")
@@ -58,6 +56,7 @@ def train_agent(job_name, agent,
                 save_freq = 10,
                 evaluation_rollouts = None,
                 plot_keys = ['stoc_pol_mean'],
+                irl_kwargs = None,
                 env_kwargs = None
                 ):
 
@@ -75,8 +74,6 @@ def train_agent(job_name, agent,
     else:
         e = GymEnv(agent.env.env_id)
 
-    # Load from any existing checkpoint, policy, statistics, etc.
-    # Why no checkpointing.. :(
     i_start = _load_latest_policy_and_logs(agent,
                                            policy_dir='iterations',
                                            logs_dir='logs')
@@ -109,8 +106,29 @@ def train_agent(job_name, agent,
         N = num_traj if sample_mode == 'trajectories' else num_samples
         args = dict(N=N, sample_mode=sample_mode, gamma=gamma, gae_lambda=gae_lambda, num_cpu=num_cpu,
                     env_kwargs=env_kwargs)
-        stats = agent.train_step(**args)
-        train_curve[i] = stats[0]
+        # calculate no. ob policy updates
+        if irl_kwargs is not None:
+            policy_updates_no = irl_kwargs['policy_updates']
+            args['return_paths'] = True
+            sampler_paths = []
+        else:
+            policy_updates_no = 1
+        # do policy update
+        for j in range(policy_updates_no):
+            output = agent.train_step(**args)
+            if isinstance(output, tuple):
+                sampler_paths.extend(output[1])
+                stats = output[0]
+            else:
+                stats = output
+            if j == 0:
+                train_curve[i] = stats[0]
+            else:
+                train_curve[i] = train_curve[i] + (1/(1+j)*(stats[0] - train_curve[i]))
+
+        # IRL discriminator update
+        if irl_kwargs is not None:
+            agent.fit_irl(sampler_paths)
 
         if evaluation_rollouts is not None and evaluation_rollouts > 0:
             print("Performing evaluation rollouts ........")
@@ -119,6 +137,10 @@ def train_agent(job_name, agent,
             mean_pol_perf = np.mean([np.sum(path['rewards']) for path in eval_paths])
             if agent.save_logs:
                 agent.logger.log_kv('eval_score', mean_pol_perf)
+
+        if agent.save_logs:
+            agent.logger.log_kv('iteration', i)
+        agent.logger.align_rows()
 
         if i % save_freq == 0 and i > 0:
             save_progress()

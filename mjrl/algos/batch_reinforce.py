@@ -9,6 +9,7 @@ import numpy as np
 import time as timer
 import torch
 from torch.autograd import Variable
+import copy
 
 # samplers
 import mjrl.samplers.core as trajectory_sampler
@@ -64,6 +65,7 @@ class BatchREINFORCE:
                    gae_lambda=0.97,
                    num_cpu='max',
                    env_kwargs=None,
+                   return_paths=False
                    ):
 
         # Clean up input arguments
@@ -87,7 +89,8 @@ class BatchREINFORCE:
             self.logger.log_kv('time_sampling', timer.time() - ts)
 
         self.seed = self.seed + N if self.seed is not None else self.seed
-
+        if return_paths:
+            original_paths = copy.deepcopy(paths)
         # compute returns
         process_samples.compute_returns(paths, gamma)
         # compute advantages
@@ -109,7 +112,10 @@ class BatchREINFORCE:
         else:
             self.baseline.fit(paths)
 
-        return eval_statistics
+        if return_paths:
+            return eval_statistics, original_paths
+        else:
+            return eval_statistics
 
     # ----------------------------------------------------------
     def train_from_paths(self, paths):
