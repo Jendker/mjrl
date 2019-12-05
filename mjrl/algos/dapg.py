@@ -33,6 +33,7 @@ class DAPG(NPG):
                  kl_dist=None,
                  lam_0=1.0,  # demo coef
                  lam_1=0.95, # decay coef
+                 entropy_weight=0
                  ):
 
         self.env = env
@@ -49,6 +50,7 @@ class DAPG(NPG):
         self.lam_1 = lam_1
         self.iter_count = 0.0
         self.global_status = dict()
+        self.entropy_weight = entropy_weight
         if save_logs: self.logger = DataLog()
 
     def train_from_paths(self, paths):
@@ -72,6 +74,11 @@ class DAPG(NPG):
             all_obs = observations
             all_act = actions
             all_adv = advantages
+
+        entropy = np.sum(self.policy.log_std_val + np.log(np.sqrt(2 * np.pi * np.e)))  # taken from inverse_rl repo
+        self.logger.log_kv('entropy', entropy)
+        if self.entropy_weight > 0:
+            all_adv = all_adv + self.entropy_weight * entropy
 
         # cache return distributions for the paths
         path_returns = [sum(p["rewards"]) for p in paths]
