@@ -139,6 +139,10 @@ def train_agent(job_name, agent,
             else:
                 train_curve[i] = train_curve[i] + (1/(1+j)*(stats[0] - train_curve[i]))
 
+        if agent.save_logs:
+            agent.logger.log_kv('iteration', i)
+        agent.logger.align_rows()
+
         # IRL discriminator update
         if irl_kwargs is not None:
             agent.fit_irl(sampler_paths)
@@ -150,10 +154,6 @@ def train_agent(job_name, agent,
             mean_pol_perf = np.mean([np.sum(path['rewards']) for path in eval_paths])
             if agent.save_logs:
                 agent.logger.log_kv('eval_score', mean_pol_perf)
-
-        if agent.save_logs:
-            agent.logger.log_kv('iteration', i)
-        agent.logger.align_rows()
 
         if i % save_freq == 0 and i > 0:
             save_progress()

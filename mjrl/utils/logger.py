@@ -13,6 +13,9 @@ class DataLog:
         self.log = {}
         self.max_len = 0
 
+    def get_last_iteration_no(self):
+        return self.log['iteration'][-1]
+
     def log_kv(self, key, value):
         # logs the (key, value) pair
 
