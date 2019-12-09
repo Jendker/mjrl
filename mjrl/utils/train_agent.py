@@ -72,7 +72,9 @@ def train_agent(job_name, agent,
                 evaluation_rollouts = None,
                 plot_keys = ['stoc_pol_mean'],
                 irl_kwargs = None,
-                env_kwargs = None
+                env_kwargs = None,
+                temperature_base=0,
+                temperature_decay=0.95
                 ):
 
     np.random.seed(seed)
@@ -114,6 +116,9 @@ def train_agent(job_name, agent,
         print("......................................................................................")
         print("ITERATION : %i " % i)
 
+        new_temperature = temperature_base * (temperature_decay ** i)
+        agent.policy.set_temperature(new_temperature)
+        agent.logger.log_kv('temperature', new_temperature)
         if train_curve[i-1] > agent.global_status['best_perf']:
             best_policy = copy.deepcopy(agent.policy)
             agent.global_status['best_perf'] = train_curve[i-1]
@@ -121,7 +126,7 @@ def train_agent(job_name, agent,
         N = num_traj if sample_mode == 'trajectories' else num_samples
         args = dict(N=N, sample_mode=sample_mode, gamma=gamma, gae_lambda=gae_lambda, num_cpu=num_cpu,
                     env_kwargs=env_kwargs)
-        # calculate no. ob policy updates
+        # calculate no. of policy updates (used for IRL)
         policy_updates_no = calculate_policy_update_count(i, irl_kwargs)
         if irl_kwargs is not None:
             args['return_paths'] = True

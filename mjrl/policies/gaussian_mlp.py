@@ -9,7 +9,8 @@ class MLP:
                  hidden_sizes=(64,64),
                  min_log_std=-3,
                  init_log_std=0,
-                 seed=None):
+                 seed=None,
+                 temperature=0):
         """
         :param env_spec: specifications of the env (see utils/gym_env.py)
         :param hidden_sizes: network hidden layer sizes (currently 2 layers only)
@@ -20,6 +21,7 @@ class MLP:
         self.n = env_spec.observation_dim  # number of states
         self.m = env_spec.action_dim  # number of actions
         self.min_log_std = min_log_std
+        self.temperature = temperature
 
         # Set seed
         # ------------------------
@@ -88,11 +90,14 @@ class MLP:
 
     # Main functions
     # ============================================
+    def set_temperature(self, temperature):
+        self.temperature = temperature
+
     def get_actions(self, observations):
         o = observations.astype(np.float32)
         self.obs_var.data = torch.from_numpy(o)
         means = self.model(self.obs_var).detach().numpy()
-        log_std_vals = np.tile(self.log_std_val, (o.shape[0], 1))
+        log_std_vals = np.tile(self.log_std_val, (o.shape[0], 1)) * (1 + self.temperature)
         noise = np.exp(log_std_vals) * np.random.randn(o.shape[0], self.m)
         action = means + noise
         return action, {'mean': means, 'log_std': log_std_vals, 'evaluation': means}
@@ -101,9 +106,10 @@ class MLP:
         o = np.float32(observation.reshape(1, -1))
         self.obs_var.data = torch.from_numpy(o)
         mean = self.model(self.obs_var).detach().numpy().ravel()
-        noise = np.exp(self.log_std_val) * np.random.randn(self.m)
+        log_std_val = self.log_std_val * (1 + self.temperature)
+        noise = np.exp(log_std_val) * np.random.randn(self.m)
         action = mean + noise
-        return [action, {'mean': mean, 'log_std': self.log_std_val, 'evaluation': mean}]
+        return [action, {'mean': mean, 'log_std': log_std_val, 'evaluation': mean}]
 
     def mean_LL(self, observations, actions, model=None, log_std=None):
         model = self.model if model is None else model
