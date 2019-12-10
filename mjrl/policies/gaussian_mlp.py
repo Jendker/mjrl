@@ -97,18 +97,29 @@ class MLP:
         o = observations.astype(np.float32)
         self.obs_var.data = torch.from_numpy(o)
         means = self.model(self.obs_var).detach().numpy()
-        log_std_vals = np.tile(self.log_std_val, (o.shape[0], 1)) * (1 + self.temperature)
+        log_std_vals = np.tile(self.log_std_val, (o.shape[0], 1))
         noise = np.exp(log_std_vals) * np.random.randn(o.shape[0], self.m)
         action = means + noise
+        for i in range(action.shape[0]):
+            random = np.random.random_sample()
+            if random < self.temperature:
+                action[i, :] = np.random.uniform(-1, 1, action.shape[1])
+                means[i, :] = np.full(action.shape[1], 0)
+                log_std_vals[i, :] = np.full(action.shape[1], np.log(2/np.sqrt(12)))
         return action, {'mean': means, 'log_std': log_std_vals, 'evaluation': means}
 
     def get_action(self, observation):
         o = np.float32(observation.reshape(1, -1))
         self.obs_var.data = torch.from_numpy(o)
         mean = self.model(self.obs_var).detach().numpy().ravel()
-        log_std_val = self.log_std_val * (1 + self.temperature)
-        noise = np.exp(log_std_val) * np.random.randn(self.m)
+        noise = np.exp(self.log_std_val) * np.random.randn(self.m)
         action = mean + noise
+        random = np.random.random_sample()
+        log_std_val = self.log_std_val
+        if random < self.temperature:
+            action = np.random.uniform(-1, 1, action.shape)
+            mean = np.full(action.shape, 0)
+            log_std_val = np.full(action.shape, np.log(2/np.sqrt(12)))
         return [action, {'mean': mean, 'log_std': log_std_val, 'evaluation': mean}]
 
     def mean_LL(self, observations, actions, model=None, log_std=None):

@@ -73,8 +73,9 @@ def train_agent(job_name, agent,
                 plot_keys = ['stoc_pol_mean'],
                 irl_kwargs = None,
                 env_kwargs = None,
-                temperature_base=0,
-                temperature_decay=0.95
+                temperature_decay=0.95,
+                temperature_min=0,
+                temperature_max=0
                 ):
 
     np.random.seed(seed)
@@ -116,7 +117,9 @@ def train_agent(job_name, agent,
         print("......................................................................................")
         print("ITERATION : %i " % i)
 
-        new_temperature = temperature_base * (temperature_decay ** i)
+        new_temperature = (temperature_max-temperature_min)*(temperature_decay ** i) + temperature_min
+        if new_temperature < 0 or temperature_max == 0:
+            new_temperature = 0
         agent.policy.set_temperature(new_temperature)
         agent.logger.log_kv('temperature', new_temperature)
         if train_curve[i-1] > agent.global_status['best_perf']:
