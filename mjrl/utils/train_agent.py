@@ -185,7 +185,7 @@ def train_agent(job_name, agent,
             print(tabulate(print_data))
 
     # final save
-    if i_start != niter:
+    if i_start < niter:
         save_progress()
     else:
         print("Requested iteration number equal to the found checkpoint iteration count. All done, exiting.")
