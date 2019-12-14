@@ -75,14 +75,16 @@ def train_agent(job_name, agent,
                 env_kwargs = None,
                 temperature_decay=0.95,
                 temperature_min=0,
-                temperature_max=0
+                temperature_max=0,
+                training_folder='Runs'
                 ):
 
     np.random.seed(seed)
-    if os.path.isdir(job_name) == False:
-        os.mkdir(job_name)
+    training_path = os.path.join(training_folder, job_name)
+    if os.path.isdir(training_path) == False:
+        os.mkdir(training_path)
     previous_dir = os.getcwd()
-    os.chdir(job_name) # important! we are now in the directory to save data
+    os.chdir(training_path) # important! we are now in the directory to save data
     if os.path.isdir('iterations') == False: os.mkdir('iterations')
     if os.path.isdir('logs') == False and agent.save_logs == True: os.mkdir('logs')
     best_policy = copy.deepcopy(agent.policy)
