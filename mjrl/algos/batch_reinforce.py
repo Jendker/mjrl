@@ -34,6 +34,7 @@ class BatchREINFORCE:
         self.save_logs = save_logs
         self.running_score = None
         self.desired_kl = desired_kl
+        self.dump_paths = False
         if save_logs: self.logger = DataLog()
 
     def CPI_surrogate(self, observations, actions, advantages):
@@ -57,7 +58,7 @@ class BatchREINFORCE:
         return vpg_grad
 
     # ----------------------------------------------------------
-    def train_step(self, N,
+    def train_step(self, N, itr,
                    env=None,
                    sample_mode='trajectories',
                    horizon=1e6,
@@ -65,7 +66,7 @@ class BatchREINFORCE:
                    gae_lambda=0.97,
                    num_cpu='max',
                    env_kwargs=None,
-                   return_paths=False
+                   return_paths=False,
                    ):
 
         # Clean up input arguments
@@ -92,6 +93,8 @@ class BatchREINFORCE:
 
         if return_paths:
             original_paths = copy.deepcopy(paths)
+        if self.dump_paths:
+            self.fusion.save_itr_paths(itr=itr, paths=paths)
         if "eval_irl" in dir(self):
             paths = self.eval_irl(paths)
         # compute returns

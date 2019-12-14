@@ -21,6 +21,7 @@ from mjrl.utils.cg_solve import cg_solve
 # Import Algs
 from mjrl.algos.npg_cg import NPG
 from mjrl.algos.behavior_cloning import BC
+from mt_src.inverse_rl.models.fusion_manager import DiskFusionDistr
 
 class DAPG(NPG):
     def __init__(self, env, policy, baseline,
@@ -33,7 +34,8 @@ class DAPG(NPG):
                  kl_dist=None,
                  lam_0=1.0,  # demo coef
                  lam_1=0.95, # decay coef
-                 entropy_weight=0
+                 entropy_weight=0,
+                 dump_paths=False
                  ):
 
         self.env = env
@@ -51,6 +53,8 @@ class DAPG(NPG):
         self.iter_count = 0.0
         self.global_status = dict()
         self.entropy_weight = entropy_weight
+        self.dump_paths = dump_paths
+        if self.dump_paths: self.fusion = DiskFusionDistr(itr_offset=10000)
         if save_logs: self.logger = DataLog()
 
     def train_from_paths(self, paths):

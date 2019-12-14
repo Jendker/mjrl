@@ -129,7 +129,7 @@ def train_agent(job_name, agent,
             agent.global_status['best_perf'] = train_curve[i-1]
 
         N = num_traj if sample_mode == 'trajectories' else num_samples
-        args = dict(N=N, sample_mode=sample_mode, gamma=gamma, gae_lambda=gae_lambda, num_cpu=num_cpu,
+        args = dict(N=N, itr=i, sample_mode=sample_mode, gamma=gamma, gae_lambda=gae_lambda, num_cpu=num_cpu,
                     env_kwargs=env_kwargs)
         # calculate no. of policy updates (used for IRL)
         policy_updates_no = calculate_policy_update_count(i, irl_kwargs)
