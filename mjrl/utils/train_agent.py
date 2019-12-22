@@ -12,7 +12,7 @@ import os
 import copy
 
 
-def _load_latest_policy_and_logs(agent, policy_dir, logs_dir):
+def _load_latest_policy_and_logs(agent, policy_dir, logs_dir, should_fresh_start):
     """Loads the latest policy.
     Returns the next step number to begin with.
     """
@@ -20,6 +20,8 @@ def _load_latest_policy_and_logs(agent, policy_dir, logs_dir):
     assert os.path.isdir(logs_dir), str(logs_dir)
 
     log_csv_path = os.path.join(logs_dir, 'log.csv')
+    if should_fresh_start:
+        assert not os.path.exists(log_csv_path), "Job is already initialized, log should be empty."
     if not os.path.exists(log_csv_path):
         agent.global_status['best_perf'] = -1e8
         return 0   # fresh start
@@ -37,7 +39,7 @@ def _load_latest_policy_and_logs(agent, policy_dir, logs_dir):
             continue
 
         with open(checkpoint_path, 'rb') as fp:
-            agent.load_checkpoint(pickle.load(fp), path=policy_dir, iteration=i)
+            agent.load_checkpoint(pickle.load(fp), path=policy_dir)
 
         return i+1
 
@@ -76,13 +78,15 @@ def train_agent(job_name, agent,
                 temperature_decay=0.95,
                 temperature_min=0,
                 temperature_max=0,
-                training_folder='Runs'
+                training_folder='Runs',
+                should_fresh_start=False
                 ):
 
     np.random.seed(seed)
+    print("Job name:", job_name)
     training_path = os.path.join(training_folder, job_name)
-    if os.path.isdir(training_path) == False:
-        os.mkdir(training_path)
+    if not os.path.isdir(training_path):
+        os.makedirs(training_path)
     previous_dir = os.getcwd()
     os.chdir(training_path) # important! we are now in the directory to save data
     if os.path.isdir('iterations') == False: os.mkdir('iterations')
@@ -96,7 +100,8 @@ def train_agent(job_name, agent,
 
     i_start = _load_latest_policy_and_logs(agent,
                                            policy_dir='iterations',
-                                           logs_dir='logs')
+                                           logs_dir='logs',
+                                           should_fresh_start=should_fresh_start)
     train_curve = agent.global_status['best_perf'] * np.ones(niter)
 
     def save_progress():
@@ -151,7 +156,6 @@ def train_agent(job_name, agent,
 
         if agent.save_logs:
             agent.logger.log_kv('iteration', i)
-        agent.logger.align_rows()
 
         # IRL discriminator update
         if irl_kwargs is not None:
@@ -164,6 +168,8 @@ def train_agent(job_name, agent,
             mean_pol_perf = np.mean([np.sum(path['rewards']) for path in eval_paths])
             if agent.save_logs:
                 agent.logger.log_kv('eval_score', mean_pol_perf)
+
+        agent.logger.align_rows()
 
         if i % save_freq == 0 and i > 0:
             save_progress()
