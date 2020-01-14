@@ -137,12 +137,12 @@ def train_agent(job_name, agent,
         args = dict(N=N, itr=i, sample_mode=sample_mode, gamma=gamma, gae_lambda=gae_lambda, num_cpu=num_cpu,
                     env_kwargs=env_kwargs)
         # calculate no. of policy updates (used for IRL)
-        policy_updates_no = calculate_policy_update_count(i, irl_kwargs)
+        policy_updates_count = calculate_policy_update_count(i, irl_kwargs)
         if irl_kwargs is not None:
             args['return_paths'] = True
             sampler_paths = []
         # do policy update
-        for j in range(policy_updates_no):
+        for j in range(policy_updates_count):
             output = agent.train_step(**args)
             if isinstance(output, tuple):
                 sampler_paths.extend(output[1])
@@ -159,7 +159,7 @@ def train_agent(job_name, agent,
 
         # IRL discriminator update
         if irl_kwargs is not None:
-            agent.fit_irl(sampler_paths)
+            agent.fit_irl(sampler_paths, num_cpu=num_cpu, policy_updates_count=policy_updates_count)
 
         if evaluation_rollouts is not None and evaluation_rollouts > 0:
             print("Performing evaluation rollouts ........")
