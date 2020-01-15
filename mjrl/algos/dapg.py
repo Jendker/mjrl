@@ -1,4 +1,7 @@
 import logging
+
+from mt_src.inverse_rl.augmentation import Augmentation
+
 logging.disable(logging.CRITICAL)
 import numpy as np
 import scipy as sp
@@ -35,7 +38,8 @@ class DAPG(NPG):
                  lam_0=1.0,  # demo coef
                  lam_1=0.95, # decay coef
                  entropy_weight=0,
-                 dump_paths=False
+                 dump_paths=False,
+                 augmentation=False
                  ):
 
         self.env = env
@@ -54,6 +58,10 @@ class DAPG(NPG):
         self.global_status = dict()
         self.entropy_weight = entropy_weight
         self.dump_paths = dump_paths
+        if augmentation:
+            self.augmentation = Augmentation(env)
+        else:
+            self.augmentation = None
         if self.dump_paths: self.fusion = DiskFusionDistr(itr_offset=10000)
         if save_logs: self.logger = DataLog()
 

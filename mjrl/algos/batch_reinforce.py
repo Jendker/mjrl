@@ -35,6 +35,7 @@ class BatchREINFORCE:
         self.running_score = None
         self.desired_kl = desired_kl
         self.dump_paths = False
+        self.augmentation = None
         if save_logs: self.logger = DataLog()
 
     def CPI_surrogate(self, observations, actions, advantages):
@@ -81,6 +82,8 @@ class BatchREINFORCE:
             input_dict = dict(num_traj=N, env=env, policy=self.policy, horizon=horizon,
                               base_seed=self.seed, num_cpu=num_cpu, env_kwargs=env_kwargs)
             paths = trajectory_sampler.sample_paths(**input_dict)
+            if self.augmentation is not None:
+                paths = self.augmentation.augment_paths(paths, num_cpu=num_cpu, augment_times=4)
         elif sample_mode == 'samples':
             input_dict = dict(num_samples=N, env=env, policy=self.policy, horizon=horizon,
                               base_seed=self.seed, num_cpu=num_cpu, env_kwargs=env_kwargs)
