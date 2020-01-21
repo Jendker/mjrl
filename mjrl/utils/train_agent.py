@@ -56,6 +56,8 @@ def calculate_policy_update_count(i, irl_kwargs):
         policy_updates = irl_kwargs['policy']['max_updates']
     if policy_updates < 1:
         policy_updates = 1
+    if int(policy_updates) == 3:
+        policy_updates = 4
     return int(policy_updates)
 
 
