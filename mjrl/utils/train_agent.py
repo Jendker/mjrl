@@ -61,6 +61,21 @@ def calculate_policy_update_count(i, irl_kwargs):
     return int(policy_updates)
 
 
+def check_run_folders(training_path, run_no):
+    if not os.path.isdir(training_path):
+        os.makedirs(training_path)
+    elems_in_training_path = os.listdir(training_path)
+    for elem in elems_in_training_path:
+        if 'run' not in elem and elem != '.DS_Store' and elem != '.' and elem != '..':
+            print('Element in runs path:', elem)
+            print('Make sure, that only runs folders are in training path. Exiting.')
+            exit(1)
+    training_path = os.path.join(training_path, 'run_' + str(run_no))
+    if os.path.exists(training_path):
+        print("Warning: Run path", training_path, 'already exists.')
+    return training_path
+
+
 def train_agent(job_name, agent,
                 seed = 0,
                 niter = 101,
@@ -79,12 +94,15 @@ def train_agent(job_name, agent,
                 temperature_min=0,
                 temperature_max=0,
                 training_folder='Runs',
-                should_fresh_start=False
+                should_fresh_start=False,
+                run_no=None
                 ):
 
     np.random.seed(seed)
     print("Job name:", job_name)
     training_path = os.path.join(training_folder, job_name)
+    if run_no is not None:
+        training_path = check_run_folders(training_path, run_no)
     if not os.path.isdir(training_path):
         os.makedirs(training_path)
     previous_dir = os.getcwd()
