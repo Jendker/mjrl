@@ -140,7 +140,10 @@ def train_agent(job_name, agent,
 
     for i in range(i_start, niter):
         print("......................................................................................")
-        print("ITERATION : %i " % i)
+        if run_no is not None:
+            print("ITERATION : %i, RUN : %i " % (i, run_no))
+        else:
+            print("ITERATION : %i " % i)
 
         new_temperature = (temperature_max-temperature_min)*(temperature_decay ** i) + temperature_min
         if new_temperature < 0 or temperature_max == 0:
