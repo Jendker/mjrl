@@ -87,7 +87,7 @@ def train_agent(job_name, agent,
                 num_samples = 50000, # has precedence, used with sample_mode = 'samples'
                 save_freq = 10,
                 evaluation_rollouts = None,
-                plot_keys = ['stoc_pol_mean'],
+                plot_keys = None,
                 irl_kwargs = None,
                 env_kwargs = None,
                 temperature_decay=0.95,
@@ -101,6 +101,8 @@ def train_agent(job_name, agent,
     np.random.seed(seed)
     print("Job name:", job_name)
     training_path = os.path.join(training_folder, job_name)
+    if plot_keys is None:
+        plot_keys = ['stoc_pol_mean']
     if run_no is not None:
         training_path = check_run_folders(training_path, run_no)
     if not os.path.isdir(training_path):
@@ -161,7 +163,7 @@ def train_agent(job_name, agent,
         policy_updates_count = calculate_policy_update_count(i, irl_kwargs)
         if irl_kwargs is not None:
             args['return_paths'] = True
-            sampler_paths = []
+        sampler_paths = []
         # do policy update
         for j in range(policy_updates_count):
             output = agent.train_step(**args)

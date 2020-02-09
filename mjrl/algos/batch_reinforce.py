@@ -9,7 +9,6 @@ import numpy as np
 import time as timer
 import torch
 from torch.autograd import Variable
-import copy
 
 # samplers
 import mjrl.samplers.core as trajectory_sampler
@@ -88,6 +87,8 @@ class BatchREINFORCE:
             input_dict = dict(num_samples=N, env=env, policy=self.policy, horizon=horizon,
                               base_seed=self.seed, num_cpu=num_cpu, env_kwargs=env_kwargs)
             paths = trajectory_sampler.sample_data_batch(**input_dict)
+        else:
+            raise ValueError("sample_mode has to be either trajectories or samples, given:", sample_mode)
 
         if self.save_logs:
             self.logger.log_kv('time_sampling', timer.time() - ts)
@@ -95,7 +96,7 @@ class BatchREINFORCE:
         self.seed = self.seed + N if self.seed is not None else self.seed
 
         if return_paths:
-            original_paths = copy.deepcopy(paths)
+            original_paths = paths.copy()
         if self.dump_paths:
             self.fusion.save_itr_paths(itr=itr, paths=paths)
         if "eval_irl" in dir(self):

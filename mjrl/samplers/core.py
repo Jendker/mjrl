@@ -146,7 +146,7 @@ def sample_paths(
             paths.append(path)  
 
     if suppress_print is False:
-        print("======= Samples Gathered  ======= | >>>> Time taken = %f " %(timer.time()-start_time) )
+        print("======= Samples Gathered  ======= | >>>> Time taken = %f " %(timer.time()-start_time))
 
     return paths
 
@@ -195,19 +195,17 @@ def _try_multiprocess(func, input_dict_list, num_cpu, max_process_time, max_time
     if max_timeouts == 0:
         return None
 
-    pool = mp.Pool(processes=num_cpu, maxtasksperchild=1)
-    parallel_runs = [pool.apply_async(func, kwds=input_dict) for input_dict in input_dict_list]
-    try:
-        results = [p.get(timeout=max_process_time) for p in parallel_runs]
-    except Exception as e:
-        print(str(e))
-        print("Timeout Error raised... Trying again")
+    with mp.Pool(processes=num_cpu, maxtasksperchild=1) as pool:
+        parallel_runs = [pool.apply_async(func, kwds=input_dict) for input_dict in input_dict_list]
         pool.close()
-        pool.terminate()
-        pool.join()
-        return _try_multiprocess(func, input_dict_list, num_cpu, max_process_time, max_timeouts-1)
+        try:
+            results = [p.get() for p in parallel_runs]
+        except TimeoutError as e:
+            print(str(e))
+            print("Timeout Error raised... Trying again")
+            pool.terminate()
+            pool.join()
+            return _try_multiprocess(func, input_dict_list, num_cpu, max_process_time, max_timeouts-1)
 
-    pool.close()
-    pool.terminate()
-    pool.join()  
+        pool.join()
     return results
