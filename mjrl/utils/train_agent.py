@@ -52,8 +52,8 @@ def calculate_policy_update_count(i, irl_kwargs):
         return 1
     if 'policy_updates' in irl_kwargs:
         return irl_kwargs['policy_updates']
-    policy_updates = irl_kwargs['policy']['min_updates'] + irl_kwargs['policy']['max_updates'] * \
-                     (i / irl_kwargs['policy']['steps_till_max'])
+    ratio = i / irl_kwargs['policy']['steps_till_max']
+    policy_updates = (1 - ratio) * irl_kwargs['policy']['min_updates'] + ratio * irl_kwargs['policy']['max_updates']
     if policy_updates > irl_kwargs['policy']['max_updates']:
         policy_updates = irl_kwargs['policy']['max_updates']
     if policy_updates < 1:
