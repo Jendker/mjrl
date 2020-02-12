@@ -190,22 +190,23 @@ def sample_data_batch(
 
 
 def _try_multiprocess(func, input_dict_list, num_cpu, max_process_time, max_timeouts):
-    
     # Base case
     if max_timeouts == 0:
         return None
 
-    with mp.Pool(processes=num_cpu, maxtasksperchild=1) as pool:
-        parallel_runs = [pool.apply_async(func, kwds=input_dict) for input_dict in input_dict_list]
+    pool = mp.Pool(processes=num_cpu, maxtasksperchild=1)
+    parallel_runs = [pool.apply_async(func, kwds=input_dict) for input_dict in input_dict_list]
+    try:
+        results = [p.get(timeout=max_process_time) for p in parallel_runs]
+    except Exception as e:
+        print(str(e))
+        print("Timeout Error raised... Trying again")
         pool.close()
-        try:
-            results = [p.get() for p in parallel_runs]
-        except TimeoutError as e:
-            print(str(e))
-            print("Timeout Error raised... Trying again")
-            pool.terminate()
-            pool.join()
-            return _try_multiprocess(func, input_dict_list, num_cpu, max_process_time, max_timeouts-1)
-
+        pool.terminate()
         pool.join()
+        return _try_multiprocess(func, input_dict_list, num_cpu, max_process_time, max_timeouts - 1)
+
+    pool.close()
+    pool.terminate()
+    pool.join()
     return results
