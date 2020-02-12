@@ -16,8 +16,10 @@ def _load_latest_policy_and_logs(agent, policy_dir, logs_dir, should_fresh_start
     """Loads the latest policy.
     Returns the next step number to begin with.
     """
+    if not os.path.isdir(logs_dir):
+        agent.global_status['best_perf'] = -1e8
+        return 0  # there is no logging activated
     assert os.path.isdir(policy_dir), str(policy_dir)
-    assert os.path.isdir(logs_dir), str(logs_dir)
 
     log_csv_path = os.path.join(logs_dir, 'log.csv')
     if should_fresh_start:
