@@ -88,7 +88,8 @@ class DAPG(NPG):
             all_adv = advantages
 
         entropy = np.sum(self.policy.log_std_val + np.log(np.sqrt(2 * np.pi * np.e)))  # taken from inverse_rl repo
-        self.logger.log_kv('entropy', entropy)
+        if self.save_logs:
+            self.logger.log_kv('entropy', entropy)
         if self.entropy_weight > 0:
             all_adv = all_adv + self.entropy_weight * entropy
 

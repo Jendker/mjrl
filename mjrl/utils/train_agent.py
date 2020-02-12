@@ -18,6 +18,7 @@ def _load_latest_policy_and_logs(agent, policy_dir, logs_dir, should_fresh_start
     """
     if not os.path.isdir(logs_dir):
         agent.global_status['best_perf'] = -1e8
+        print("\n--- Warning: no logging activated, the training will be started from scratch. ---\n")
         return 0  # there is no logging activated
     assert os.path.isdir(policy_dir), str(policy_dir)
 
@@ -153,7 +154,8 @@ def train_agent(job_name, agent,
         if new_temperature < 0 or temperature_max == 0:
             new_temperature = 0
         agent.policy.set_temperature(new_temperature)
-        agent.logger.log_kv('temperature', new_temperature)
+        if agent.save_logs:
+            agent.logger.log_kv('temperature', new_temperature)
         if train_curve[i-1] > agent.global_status['best_perf']:
             best_policy = copy.deepcopy(agent.policy)
             agent.global_status['best_perf'] = train_curve[i-1]
@@ -194,7 +196,8 @@ def train_agent(job_name, agent,
             if agent.save_logs:
                 agent.logger.log_kv('eval_score', mean_pol_perf)
 
-        agent.logger.align_rows()
+        if agent.save_logs:
+            agent.logger.align_rows()
 
         if i % save_freq == 0 and i > 0:
             save_progress()
