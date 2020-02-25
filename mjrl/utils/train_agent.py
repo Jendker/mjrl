@@ -69,7 +69,7 @@ def check_run_folders(training_path, run_no):
         os.makedirs(training_path)
     elems_in_training_path = os.listdir(training_path)
     for elem in elems_in_training_path:
-        if 'run' not in elem and elem != '.DS_Store' and elem != '.' and elem != '..':
+        if 'run' not in elem and elem != '.DS_Store' and elem != '.' and elem != '..' and elem != 'config.yaml':
             print('Element in runs path:', elem)
             print('Make sure, that only runs folders are in training path. Exiting.')
             exit(1)
