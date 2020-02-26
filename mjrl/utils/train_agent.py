@@ -186,7 +186,8 @@ def train_agent(job_name, agent,
 
         # IRL discriminator update
         if irl_kwargs is not None:
-            agent.fit_irl(sampler_paths, num_cpu=num_cpu, policy_updates_count=policy_updates_count)
+            agent.fit_irl(sampler_paths, main_loop_step=i, main_loop_percentage=i/niter,
+                          num_cpu=num_cpu, policy_updates_count=policy_updates_count)
 
         if evaluation_rollouts is not None and evaluation_rollouts > 0:
             print("Performing evaluation rollouts ........")
