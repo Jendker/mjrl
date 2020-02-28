@@ -108,7 +108,7 @@ def sample_paths(
         base_seed = None,
         num_cpu = 1,
         max_process_time=300,
-        max_timeouts=4,
+        max_timeouts=8,
         suppress_print=False,
         env_kwargs=None,
         ):
