@@ -116,10 +116,11 @@ class MLP:
         action = mean + noise
         random = np.random.random_sample()
         log_std_val = self.log_std_val
-        if random < self.temperature:
-            action = np.random.uniform(-1, 1, action.shape)
-            mean = np.full(action.shape, 0)
-            log_std_val = np.full(action.shape, np.log(2/np.sqrt(12)))
+        if hasattr(self, 'temperature'):
+            if random < self.temperature:
+                action = np.random.uniform(-1, 1, action.shape)
+                mean = np.full(action.shape, 0)
+                log_std_val = np.full(action.shape, np.log(2/np.sqrt(12)))
         return [action, {'mean': mean, 'log_std': log_std_val, 'evaluation': mean}]
 
     def mean_LL(self, observations, actions, model=None, log_std=None):
