@@ -37,6 +37,7 @@ class BatchREINFORCE:
         self.desired_kl = desired_kl
         self.dump_paths = False
         self.augmentation = None
+        self.direct_learning_augment_samples_count = 0
         if save_logs: self.logger = DataLog()
 
     def CPI_surrogate(self, observations, actions, advantages):
@@ -84,7 +85,8 @@ class BatchREINFORCE:
                               base_seed=self.seed, num_cpu=num_cpu, env_kwargs=env_kwargs)
             paths = trajectory_sampler.sample_paths(**input_dict)
             if self.augmentation is not None:
-                paths = self.augmentation.augment_paths(paths, num_cpu=num_cpu, augment_times=4)
+                paths = self.augmentation.augment_paths(paths, num_cpu=num_cpu,
+                                                        augment_times=self.direct_learning_augment_samples_count)
         elif sample_mode == 'samples':
             input_dict = dict(num_samples=N, env=env, policy=self.policy, horizon=horizon,
                               base_seed=self.seed, num_cpu=num_cpu, env_kwargs=env_kwargs)
