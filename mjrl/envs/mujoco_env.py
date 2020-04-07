@@ -5,8 +5,8 @@ from gym.utils import seeding
 import numpy as np
 from os import path
 import gym
-import six
 import time as timer
+from mt_src.inverse_rl.models.airl_state import AIRL
 
 try:
     import mujoco_py
@@ -182,3 +182,12 @@ class MujocoEnv(gym.Env):
             print("saved", file_name)
             t1 = timer.time()
             print("time taken = %f"% (t1-t0))
+
+    def insert_timestamp(self, obs):
+        if self.use_timestamp:
+            try:
+                obs = AIRL.insert_timestamp(obs, timestamp=int(self.data.time/self.dt),
+                                            max_timestamp=self.spec.max_episode_steps)
+            except AttributeError:
+                obs = AIRL.insert_timestamp(obs, timestamp=1, max_timestamp=1)  # for initialisation
+        return obs
