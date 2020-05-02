@@ -115,7 +115,7 @@ def train_agent(job_name, agent,
     if os.path.isdir('iterations') == False: os.mkdir('iterations')
     if os.path.isdir('logs') == False and agent.save_logs == True: os.mkdir('logs')
     best_policy = copy.deepcopy(agent.policy)
-    mean_pol_perf = 0.0
+    mean_evaluation_pol_performance = 0.0
     if isinstance(env_kwargs, dict):
         e = GymEnv(agent.env.env_id, **env_kwargs)
     else:
@@ -192,10 +192,10 @@ def train_agent(job_name, agent,
         if evaluation_rollouts is not None and evaluation_rollouts > 0:
             print("Performing evaluation rollouts ........")
             eval_paths = sample_paths(num_traj=evaluation_rollouts, policy=agent.policy, num_cpu=num_cpu,
-                                      env=e.env_id, eval_mode=True, base_seed=seed)
-            mean_pol_perf = np.mean([np.sum(path['rewards']) for path in eval_paths])
+                                      env=e.env_id, eval_mode=True, base_seed=seed, env_kwargs=env_kwargs)
+            mean_evaluation_pol_performance = np.mean([np.sum(path['rewards']) for path in eval_paths])
             if agent.save_logs:
-                agent.logger.log_kv('eval_score', mean_pol_perf)
+                agent.logger.log_kv('eval_score', mean_evaluation_pol_performance)
 
         if agent.save_logs:
             agent.logger.align_rows()
@@ -210,9 +210,9 @@ def train_agent(job_name, agent,
             result_file.write("Iter | Sampling Pol | Evaluation Pol | Best (Sampled) \n")
             result_file.close()
         print("[ %s ] %4i %5.2f %5.2f %5.2f " % (timer.asctime(timer.localtime(timer.time())),
-                                                 i, train_curve[i], mean_pol_perf, agent.global_status['best_perf']))
+                                                 i, train_curve[i], mean_evaluation_pol_performance, agent.global_status['best_perf']))
         result_file = open('results.txt', 'a')
-        result_file.write("%4i %5.2f %5.2f %5.2f \n" % (i, train_curve[i], mean_pol_perf, agent.global_status['best_perf']))
+        result_file.write("%4i %5.2f %5.2f %5.2f \n" % (i, train_curve[i], mean_evaluation_pol_performance, agent.global_status['best_perf']))
         result_file.close()
         if agent.save_logs:
             print_data = sorted(filter(lambda v: np.asarray(v[1]).size == 1,
