@@ -1,5 +1,7 @@
 import logging
 import numpy as np
+from mjrl.samplers import get_tajectories_per_cpu
+from mjrl.utils.fixed_evaluation import get_init_states_per_cpu
 from mjrl.utils.gym_env import GymEnv
 from mjrl.utils import tensor_utils
 logging.disable(logging.CRITICAL)
@@ -18,6 +20,7 @@ def do_rollout(
         horizon = 1e6,
         base_seed = None,
         env_kwargs=None,
+        init_states_per_cpu=None
 ):
     """
     :param num_traj:    number of trajectories (int)
@@ -27,6 +30,7 @@ def do_rollout(
     :param horizon:     max horizon length for rollout (<= env.horizon)
     :param base_seed:   base seed for rollouts (int)
     :param env_kwargs:  dictionary with parameters, will be passed to env generator
+    :param init_states_per_cpu: list of init states to initialize from for fixed evaluation
     :return:
     """
 
@@ -66,6 +70,9 @@ def do_rollout(
         env_infos = []
 
         o = env.reset()
+        if init_states_per_cpu is not None:
+            o = env.set_env_state(init_states_per_cpu[ep])
+            assert o is not None, 'set_env_state of env ' + env.env_id + ' returns None, should return observation'
         done = False
         t = 0
 
@@ -111,27 +118,34 @@ def sample_paths(
         max_timeouts=8,
         suppress_print=False,
         env_kwargs=None,
+        fixed_init_states=False
         ):
 
     num_cpu = 1 if num_cpu is None else num_cpu
     num_cpu = mp.cpu_count() if num_cpu == 'max' else num_cpu
     assert type(num_cpu) == int
 
+    if fixed_init_states:
+        init_states_per_cpu = get_init_states_per_cpu(env, num_traj, num_cpu, env_kwargs)
+    else:
+        init_states_per_cpu = None
+
     if num_cpu == 1:
         input_dict = dict(num_traj=num_traj, env=env, policy=policy,
                           eval_mode=eval_mode, horizon=horizon, base_seed=base_seed,
-                          env_kwargs=env_kwargs)
+                          env_kwargs=env_kwargs, init_states_per_cpu=init_states_per_cpu[0])
         # dont invoke multiprocessing if not necessary
         return do_rollout(**input_dict)
 
     # do multiprocessing otherwise
-    paths_per_cpu = int(np.ceil(num_traj/num_cpu))
+    paths_per_cpu = get_tajectories_per_cpu(num_traj, num_cpu)
     input_dict_list= []
     for i in range(num_cpu):
         input_dict = dict(num_traj=paths_per_cpu, env=env, policy=policy,
                           eval_mode=eval_mode, horizon=horizon,
                           base_seed=base_seed + i * paths_per_cpu,
-                          env_kwargs=env_kwargs)
+                          env_kwargs=env_kwargs,
+                          init_states_per_cpu=init_states_per_cpu[i] if init_states_per_cpu is not None else None)
         input_dict_list.append(input_dict)
     if suppress_print is False:
         start_time = timer.time()

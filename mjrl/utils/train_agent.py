@@ -98,7 +98,8 @@ def train_agent(job_name, agent,
                 temperature_max=0,
                 training_folder='Runs',
                 should_fresh_start=False,
-                run_no=None
+                run_no=None,
+                fixed_evaluation_init_states=False
                 ):
 
     np.random.seed(seed)
@@ -192,7 +193,8 @@ def train_agent(job_name, agent,
         if evaluation_rollouts is not None and evaluation_rollouts > 0:
             print("Performing evaluation rollouts ........")
             eval_paths = sample_paths(num_traj=evaluation_rollouts, policy=agent.policy, num_cpu=num_cpu,
-                                      env=e.env_id, eval_mode=True, base_seed=seed, env_kwargs=env_kwargs)
+                                      env=e.env_id, eval_mode=True, base_seed=seed, env_kwargs=env_kwargs,
+                                      fixed_init_states=fixed_evaluation_init_states)
             mean_evaluation_pol_performance = np.mean([np.sum(path['rewards']) for path in eval_paths])
             if agent.save_logs:
                 agent.logger.log_kv('eval_score', mean_evaluation_pol_performance)

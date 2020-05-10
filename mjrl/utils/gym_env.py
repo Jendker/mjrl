@@ -110,7 +110,7 @@ class GymEnv(object):
 
     def set_env_state(self, state_dict):
         try:
-            self.env.env.set_env_state(state_dict)
+            return self.env.env.set_env_state(state_dict)
         except:
             raise NotImplementedError
 
