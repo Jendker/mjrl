@@ -1,7 +1,6 @@
 import gym
 import pickle
 import os
-import hashlib
 
 from mjrl.samplers import get_tajectories_per_cpu
 from mjrl.utils.gym_env import GymEnv
@@ -12,22 +11,27 @@ BASE_SEED = 1234
 
 
 def generate_missing_init_states(env_name, env_kwargs, existing_states, states_num_to_generate):
-    env = gym.make(env_name, **env_kwargs)
+    should_generate_and_save = len(existing_states) != states_num_to_generate
+    if should_generate_and_save:
+        env = gym.make(env_name, **env_kwargs)
 
-    should_save = len(existing_states) != states_num_to_generate
+        for i in range(len(existing_states), states_num_to_generate):
+            env.seed(BASE_SEED + i)
+            env.reset()
+            existing_states.append(env.get_env_state())
 
-    for i in range(len(existing_states), states_num_to_generate):
-        env.seed(BASE_SEED + i)
-        env.reset()
-        existing_states.append(env.get_env_state())
-
-    if should_save:
         save_init_states(existing_states, env_name, env_kwargs)
+
     return existing_states
 
 
 def get_hash_env_kwargs(env_kwargs):
-    return frozenset(env_kwargs.items())
+    key_dict = env_kwargs.copy()
+    # 'use_timestamp' key should be ignored, it is used similarly as an algorithm parameter
+    # and thus should not influence the test set
+    if 'use_timestamp' in key_dict:
+        del key_dict['use_timestamp']
+    return frozenset(key_dict.items())
 
 
 def save_init_states(init_states_to_save, env_name, env_kwargs):
