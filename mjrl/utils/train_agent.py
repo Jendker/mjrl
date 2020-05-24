@@ -200,16 +200,6 @@ def train_agent(job_name, agent,
                 agent.logger.log_kv('eval_score', mean_evaluation_pol_performance)
                 eval_success_rate = e.env.evaluate_success(eval_paths)
                 agent.logger.log_kv('eval_success_rate', eval_success_rate)
-            # original random evaluation rolout, testing for now
-            print("Performing orignal random evaluation rollouts ........")
-            eval_paths = sample_paths(num_traj=evaluation_rollouts, policy=agent.policy, num_cpu=num_cpu,
-                                      env=e.env_id, eval_mode=True, base_seed=seed, env_kwargs=env_kwargs,
-                                      fixed_init_states=False)
-            mean_evaluation_pol_performance = np.mean([np.sum(path['rewards']) for path in eval_paths])
-            if agent.save_logs:
-                agent.logger.log_kv('original_eval_score', mean_evaluation_pol_performance)
-                eval_success_rate = e.env.evaluate_success(eval_paths)
-                agent.logger.log_kv('original_eval_success_rate', eval_success_rate)
 
         if agent.save_logs:
             agent.logger.align_rows()
