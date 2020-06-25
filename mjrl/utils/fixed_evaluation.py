@@ -29,7 +29,7 @@ def get_hash_env_kwargs(env_kwargs):
     key_dict = env_kwargs.copy()
     # 'use_timestamp' key should be ignored, it is used similarly as an algorithm parameter
     # and thus should not influence the test set
-    if 'use_timestamp' in key_dict:
+    if 'use_timestamp' in key_dict or 'terminate' in key_dict:
         del key_dict['use_timestamp']
     return frozenset(key_dict.items())
 
