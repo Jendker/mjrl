@@ -59,8 +59,7 @@ class DAPG(NPG):
         self.entropy_weight = entropy_weight
         self.dump_paths = dump_paths
         if augmentation > 0:
-            self.augmentation = Augmentation(env)
-            self.direct_learning_augment_samples_count = augmentation
+            self.augmentation = Augmentation(env, augment_times=augmentation)
         else:
             self.augmentation = None
         if self.dump_paths: self.fusion = DiskFusionDistr(itr_offset=10000)
