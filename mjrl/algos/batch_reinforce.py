@@ -225,3 +225,10 @@ class BatchREINFORCE:
         self.logger.log_kv('stoc_pol_std', std_return)
         self.logger.log_kv('stoc_pol_max', max_return)
         self.logger.log_kv('stoc_pol_min', min_return)
+
+    @property
+    def checkpoint(self):
+        return [self.policy, self.baseline, self.global_status]
+
+    def load_checkpoint(self, checkpoint, **kwargs):
+        self.policy, self.baseline, self.global_status = checkpoint
