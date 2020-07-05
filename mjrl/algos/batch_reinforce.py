@@ -103,8 +103,10 @@ class BatchREINFORCE:
             original_paths = paths.copy()
         if self.dump_paths:
             self.fusion.save_itr_paths(itr=itr, paths=paths)
-        if "eval_irl" in dir(self):
+        if hasattr(self, "eval_irl"):
             paths = self.eval_irl(paths)
+            if hasattr(self, "demo_paths"):
+                self.demo_paths = self.eval_irl(self.demo_paths)
         # compute returns
         process_samples.compute_returns(paths, gamma)
         # compute advantages
