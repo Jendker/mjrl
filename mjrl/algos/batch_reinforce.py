@@ -105,7 +105,7 @@ class BatchREINFORCE:
             self.fusion.save_itr_paths(itr=itr, paths=paths)
         if hasattr(self, "eval_irl"):
             paths = self.eval_irl(paths)
-            if hasattr(self, "demo_paths"):
+            if hasattr(self, "demo_paths") and self.demo_paths is not None:
                 self.demo_paths = self.eval_irl(self.demo_paths)
         # compute returns
         process_samples.compute_returns(paths, gamma)
