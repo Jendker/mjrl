@@ -106,7 +106,7 @@ class BatchREINFORCE:
         if hasattr(self, "eval_irl"):
             paths = self.eval_irl(paths)
             if hasattr(self, "demo_paths") and self.demo_paths is not None:
-                self.demo_paths = self.eval_irl(self.demo_paths)
+                self.demo_paths = self.eval_irl(self.demo_paths, paths_from_policy=False)
         # compute returns
         process_samples.compute_returns(paths, gamma)
         # compute advantages
