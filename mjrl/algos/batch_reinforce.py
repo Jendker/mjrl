@@ -103,7 +103,7 @@ class BatchREINFORCE:
             original_paths = paths.copy()
         if self.dump_paths:
             self.fusion.save_itr_paths(itr=itr, paths=paths)
-        if hasattr(self, "eval_irl"):
+        if hasattr(self, "irl_model"):
             paths = self.eval_irl(paths)
             if hasattr(self, "demo_paths") and self.demo_paths is not None:
                 self.demo_paths = self.eval_irl(self.demo_paths, paths_from_policy=False)
