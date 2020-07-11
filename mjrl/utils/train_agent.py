@@ -195,6 +195,8 @@ def train_agent(job_name, agent,
             eval_paths = sample_paths(num_traj=evaluation_rollouts, policy=agent.policy, num_cpu=num_cpu,
                                       env=e.env_id, eval_mode=True, base_seed=seed, env_kwargs=env_kwargs,
                                       fixed_init_states=fixed_evaluation_init_states)
+            if hasattr(agent, "irl_model"):
+                eval_paths = agent.eval_irl(eval_paths)
             mean_evaluation_pol_performance = np.mean([np.sum(path['rewards']) for path in eval_paths])
             if agent.save_logs:
                 agent.logger.log_kv('eval_score', mean_evaluation_pol_performance)
