@@ -1,7 +1,5 @@
 import logging
 
-from mt_src.inverse_rl.augmentation import Augmentation
-
 logging.disable(logging.CRITICAL)
 import numpy as np
 import scipy as sp
@@ -24,7 +22,6 @@ from mjrl.utils.cg_solve import cg_solve
 # Import Algs
 from mjrl.algos.npg_cg import NPG
 from mjrl.algos.behavior_cloning import BC
-from mt_src.inverse_rl.models.fusion_manager import DiskFusionDistr
 
 class DAPG(NPG):
     def __init__(self, env, policy, baseline,
@@ -59,10 +56,13 @@ class DAPG(NPG):
         self.entropy_weight = entropy_weight
         self.dump_paths = dump_paths
         if augmentation > 0:
+            from mt_src.inverse_rl.augmentation import Augmentation
             self.augmentation = Augmentation(env, augment_times=augmentation)
         else:
             self.augmentation = None
-        if self.dump_paths: self.fusion = DiskFusionDistr(itr_offset=10000)
+        if self.dump_paths:
+            from mt_src.inverse_rl.models.fusion_manager import DiskFusionDistr
+            self.fusion = DiskFusionDistr(itr_offset=10000)
         if save_logs: self.logger = DataLog()
 
     def train_from_paths(self, paths):

@@ -6,7 +6,6 @@ import numpy as np
 from os import path
 import gym
 import time as timer
-from mt_src.inverse_rl.models.airl_state import AIRL
 
 try:
     import mujoco_py
@@ -185,6 +184,7 @@ class MujocoEnv(gym.Env):
 
     def insert_timestamp(self, obs):
         if self.use_timestamp:
+            from mt_src.inverse_rl.models.airl_state import AIRL
             try:
                 obs = AIRL.insert_timestamp(obs, timestamp=int(self.data.time/self.dt),
                                             max_timestamp=self.spec.max_episode_steps)
